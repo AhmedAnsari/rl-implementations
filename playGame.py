@@ -1,7 +1,6 @@
 # -------------------------
-# Project: Deep Q-Learning on Flappy Bird
-# Author: Flood Sung
-# Date: 2016.3.21
+# Project: DQN Nature implementation 
+# Author: ghulamahmedansari,Rakesh Menon
 # -------------------------
 
 import cv2
