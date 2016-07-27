@@ -66,6 +66,7 @@ class DQN:
 		tf.initialize_all_variables()
 
 		self.session = tf.InteractiveSession()
+		self.session.run(self.copyTargetQNetworkOperation)
 
 
 	def createQNetwork(self):
@@ -122,18 +123,19 @@ class DQN:
 			else:
 				y_batch.append(reward_batch[i] + GAMMA * np.max(QValue_batch[i]))
 
-		self.trainStep.run(feed_dict={
+		self.optim.run(feed_dict={
 			self.target : y_batch,										#CHECK AGAIN
 			self.target_idx : action_batch,								#CHECK AGAIN
 			self.stateInput : state_batch
 			})
 
-		# save network every 100000 iteration
+		# save network every 10000 iteration
 		if self.timeStep % 10000 == 0:
 			self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.timeStep)
 
 		if self.timeStep % UPDATE_TIME == 0:
-			self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
+			self.session.run(self.copyTargetQNetworkOperation)
+			# self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
 
 	def setPerception(self,observation): #nextObservation,action,reward,terminal):
 		newState = np.append(self.currentState[:,:,1:], observation[0],axis = 2)
@@ -154,8 +156,8 @@ class DQN:
 			state = "train"
 
 		print "TIMESTEP", self.timeStep,# "/ STATE", state, \
-        #    "/ EPSILON", self.epsilon
-        self.currentState = observation[0]
+		#    "/ EPSILON", self.epsilon
+		self.currentState = observation[0]
 		self.timeStep += 1
 
 
