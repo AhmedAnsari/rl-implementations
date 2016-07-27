@@ -9,6 +9,8 @@ from DQN import DQN
 import numpy as np
 
 START_NEW_GAME = True
+MAX_FRAMES = 50000000
+
 
 # input the game name here
 GAME='Breakout-v0'
@@ -23,13 +25,11 @@ def preprocess(observation):
     return np.array(observation)
 
 def playKFrames(action,env):
-    phi=[]
     Reward = 0
     for _ in xrange(K):
         observation,localreward,terminal,__=env.step(action)
-        observation = preprocess(observation)
-        phi.append(observation)
-        Reward+=localreward    
+        Reward+=localreward
+    phi = preprocess(observation)
     change_reward = 0
     if Reward > 0:
     	change_reward = 1
@@ -39,7 +39,7 @@ def playKFrames(action,env):
     if terminal:
     	START_NEW_GAME = True
 
-    return (np.array(phi), action, change_reward, terminal)
+    return (np.array(phi, dtype = np.float32), action, change_reward, terminal)
     
 def playgame():
     # Step 1: init Game    
@@ -47,16 +47,22 @@ def playgame():
     # Step 2: init DQN
     actions = env.action_space.n
     brain = DQN(actions)
-    while 1 != 0:
+    while True:
     	if START_NEW_GAME:
     		START_NEW_GAME = False
 	    	env.reset()
-		    action0 = env.action_space.sample()
-		    #remember to edit setInitState    
-		    brain.setInitState(playKFrames(action0,env)[0])
+	    	init_state = []
+	    	for i in range(4):
+			    action0 = env.action_space.sample()
+			    init_state.append(playKFrames(action0,env)[0])
+			brain.setInitState(init_state)
         action = brain.getAction()
         
         brain.setPerception(playKFrames(action,env))
+
+        if (brain.timeStep * K) > MAX_FRAMES:
+        	break
+    brain.session.close()
 
 def main():
     playgame()

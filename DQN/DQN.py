@@ -63,6 +63,11 @@ class DQN:
 		
 		self.optim = tf.train.RMSPropOptimizer(learning_rate=LEARNING_RATE, decay = 1, momentum=GRADIENT_MOMENTUM).minimize(self.loss)
 		
+		tf.initialize_all_variables()
+
+		self.session = tf.InteractiveSession()
+
+
 	def createQNetwork(self):
 		#network weights
 		W_conv1 = self.weight_variable([8, 8, 4, 32])
@@ -131,14 +136,13 @@ class DQN:
 			self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
 
 	def setPerception(self,observation): #nextObservation,action,reward,terminal):
-		self.replayMemory.append((self.currentState,observation[1],observation[2],observation[0],observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
+		newState = np.append(self.currentState[:,:,1:], observation[0],axis = 2)
+		self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
 		if len(self.replayMemory) > REPLAY_MEMORY:
 			self.replayMemory.popleft()
 		if self.timeStep > OBSERVE and len(self.replayMemory) > REPLAY_START_SIZE:
 			# Train the network
 			self.trainQNetwork()
-		#ACTION needs to be returned in this function
-		#PUT in random policy
 
 		# print info
 		state = ""
@@ -170,7 +174,7 @@ class DQN:
 		return action_index
 
 	def setInitState(self,observation):
-		self.currentState = observation[0]
+		self.currentState = observation
 
 
 	def weight_variable(self, shape):
