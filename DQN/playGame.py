@@ -38,12 +38,12 @@ def playgame():
     brain = BrainDQN(actions)
     # Step 3.1: play game
     env.reset()
-    action0 = env.action_space.sample()        
+    action0 = env.action_space.sample()
     #remember to edit setInitState    
     brain.setInitState(playKFrames(action0,env)[0])
 
     # Step 3.2: run the game
-    while 1!= 0:
+    while 1 != 0:
         action = brain.getAction()
         #remember to edit setPerception
         #EDIT to start new game once terminal is reached or create a main.py
