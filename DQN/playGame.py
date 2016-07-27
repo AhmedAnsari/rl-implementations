@@ -36,6 +36,7 @@ def playKFrames(action,env):
 	elif Reward < 0:
 		change_reward = -1
 
+
 	if terminal:
 		START_NEW_GAME = True
 
