@@ -11,7 +11,7 @@ import numpy as np
 START_NEW_GAME = True
 MAX_FRAMES = 500
 CURR_REWARD = 0
-
+EVAL = 10000
 # input the game name here
 GAME='Breakout-v0'
 # number of frames to skip
@@ -50,6 +50,7 @@ def playKFrames(action,env):
 
 def evaluate(brain, env):
     global CURR_REWARD
+    global EVAL
     evalStep = 0
     numEpisode = 1.
     totalReward = 0
@@ -79,6 +80,7 @@ def evaluate(brain, env):
 def playgame():
     global START_NEW_GAME
     global MAX_FRAMES
+    global EVAL    
     # Step 1: init Game
     env = gym.make(GAME)
     # Step 2: init DQN
