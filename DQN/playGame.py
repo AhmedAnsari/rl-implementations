@@ -10,7 +10,7 @@ import numpy as np
 
 START_NEW_GAME = True
 MAX_FRAMES = 500
-
+CURR_REWARD = 0
 
 # input the game name here
 GAME='Breakout-v0'
@@ -26,6 +26,7 @@ def preprocess(observation):
 
 def playKFrames(action,env):
     global START_NEW_GAME
+    global CURR_REWARD
     Reward = 0
     for _ in xrange(K):
         env.render()
@@ -33,6 +34,7 @@ def playKFrames(action,env):
 #        cv2.imshow('game',observation)
 #        print observation        
         Reward+=localreward
+        CURR_REWARD = localreward
     phi = preprocess(observation)
     change_reward = 0
     if Reward > 0:
@@ -45,6 +47,34 @@ def playKFrames(action,env):
         START_NEW_GAME = True
 
     return (np.array(phi, dtype = np.float32), action, change_reward, terminal)
+
+def evaluate(brain, env):
+    global CURR_REWARD
+    evalStep = 0
+    numEpisode = 1.
+    totalReward = 0
+    while True:
+        if evalStep >= 10000:
+            break
+        if START_NEW_GAME:
+            numEpisode += 1
+            START_NEW_GAME = False
+            env.reset()
+            init_state = []
+            for i in range(4):
+                action0 = env.action_space.sample()
+                init_state.append(playKFrames(action0,env)[0])
+            brain.setInitState(init_state)
+        action = brain.getAction(True)
+
+        brain.setPerception(playKFrames(action,env), True)
+        totalReward += CURR_REWARD
+        evalStep += 1
+
+    totalReward /= numEpisode
+    return totalReward
+
+
 
 def playgame():
     global START_NEW_GAME
@@ -66,6 +96,11 @@ def playgame():
         action = brain.getAction()
 
         brain.setPerception(playKFrames(action,env))
+
+        if (brain.timeStep % EVAL == 0) and (brain.timeStep != 0):
+            reward = evaluate(brain, env)
+            with open("reward.txt", "a") as fp:
+                print >> fp, reward
 
         if (brain.timeStep * K) > MAX_FRAMES:
             break

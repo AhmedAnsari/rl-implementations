@@ -143,7 +143,9 @@ class DQN:
             # self.session.run(self.copyTargetQNetworkOperation)
             # self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
             self.copyTargetQNetworkOperation()
-    def setPerception(self,observation): #nextObservation,action,reward,terminal):
+
+
+    def setPerception(self,observation, evaluate = False): #nextObservation,action,reward,terminal):
         global EXPLORE
         global REPLAY_MEMORY
         global REPLAY_START_SIZE
@@ -154,7 +156,8 @@ class DQN:
             self.replayMemory.popleft()
         if self.timeStep > REPLAY_START_SIZE and len(self.replayMemory) > REPLAY_START_SIZE:
             # Train the network
-            self.trainQNetwork()
+            if not evaluate:
+            	self.trainQNetwork()
 
         # print info
         state = ""
@@ -168,22 +171,27 @@ class DQN:
         print "TIMESTEP", self.timeStep,# "/ STATE", state, \
         #    "/ EPSILON", self.epsilon
         self.currentState = nextState
-        self.timeStep += 1
+        if not evaluate:
+        	self.timeStep += 1
 
 
-    def getAction(self):
+    def getAction(self, evaluate = False):
         global EXPLORE
         global REPLAY_START_SIZE
         action_index = 0
-        if random.random() <= self.epsilon:
+
+        curr_epsilon = self.epsilon
+        if evaluate:
+        	curr_epsilon = 0.05
+        if random.random() <= curr_epsilon:
             action_index = random.randrange(self.actions)
         else:
             QValue = self.QValue.eval(feed_dict={self.stateInput:[self.currentState]})[0]
             action_index = np.argmax(QValue)
 
-
-        if self.epsilon > FINAL_EPSILON and self.timeStep > REPLAY_START_SIZE:
-            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+        if not evaluate:
+	        if self.epsilon > FINAL_EPSILON and self.timeStep > REPLAY_START_SIZE:
+	            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
         return action_index
 
