@@ -45,7 +45,7 @@ class DQN:
 		#init target Q network
 		self.stateInputT,self.QValueT,self.W_conv1T,self.b_conv1T,self.W_conv2T,self.b_conv2T,self.W_conv3T,self.b_conv3T,self.W_fc1T,self.b_fc1T,self.W_fc2T,self.b_fc2T = self.createQNetwork()
 
-		self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
+#		self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
 
 		self.target = tf.placeholder(tf.float32, [None])
 
@@ -66,8 +66,20 @@ class DQN:
 		tf.initialize_all_variables()
 
 		self.session = tf.InteractiveSession()
-		self.session.run(self.copyTargetQNetworkOperation)
+		# self.session.run(self.copyTargetQNetworkOperation)
+		self.copyTargetQNetworkOperation()
 
+	def copyTargetQNetworkOperation(self):
+		self.W_conv1T.assign(self.W_conv1)
+		self.b_conv1T.assign(self.b_conv1)
+		self.W_conv2T.assign(self.W_conv2)
+		self.b_conv2T.assign(self.b_conv2)
+		self.W_conv3T.assign(self.W_conv3)
+		self.b_conv3T.assign(self.b_conv3)
+		self.W_fc1T.assign(self.W_fc1)
+		self.b_fc1T.assign(self.b_fc1)
+		self.W_fc2T.assign(self.W_fc2)
+		self.b_fc2T.assign(self.b_fc2)
 
 	def createQNetwork(self):
 		#network weights
@@ -134,9 +146,9 @@ class DQN:
 			self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.timeStep)
 
 		if self.timeStep % UPDATE_TIME == 0:
-			self.session.run(self.copyTargetQNetworkOperation)
+			# self.session.run(self.copyTargetQNetworkOperation)
 			# self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
-
+			self.copyTargetQNetworkOperation()
 	def setPerception(self,observation): #nextObservation,action,reward,terminal):
 		newState = np.append(self.currentState[:,:,1:], observation[0],axis = 2)
 		self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
