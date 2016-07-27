@@ -27,6 +27,7 @@ def preprocess(observation):
 def playKFrames(action,env):
     Reward = 0
     for _ in xrange(K):
+        env.render()
         observation,localreward,terminal,__=env.step(action)
         Reward+=localreward
     phi = preprocess(observation)
