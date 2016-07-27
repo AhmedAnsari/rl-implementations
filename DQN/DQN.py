@@ -154,6 +154,23 @@ class DQN:
         self.currentState = observation[0]
 		self.timeStep += 1
 
+
+	def getAction(self):
+		action = np.zeros(self.actions)
+		action_index = 0
+		if random.random() <= self.epsilon:
+			action_index = random.randrange(self.actions)
+		else:
+			QValue = self.QValue.eval(feed_dict={self.stateInput:[self.currentState]})[0]
+			action_index = np.argmax(QValue)
+
+		action[action_index] = 1
+
+		if self.epsilon > FINAL_EPSILON and self.timeStep > OBSERVE:
+			self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+
+		return action
+
 	def setInitState(self,observation):
 		self.currentState = observation[0]
 

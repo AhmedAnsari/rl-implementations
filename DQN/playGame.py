@@ -5,7 +5,7 @@
 
 import cv2
 import gym
-from BrainDQN_Nature import BrainDQN
+from DQN import DQN
 import numpy as np
 
 # input the game name here
