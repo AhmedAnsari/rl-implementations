@@ -187,5 +187,3 @@ class DQN:
 		'''
 		return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = 'SAME')
 
-	# def max_pool_2x2(self, x):
-	# 	return tf.nn.max_pool(x, ksize = [1, 2, 2, 1])

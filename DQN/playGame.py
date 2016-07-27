@@ -8,6 +8,8 @@ import gym
 from DQN import DQN
 import numpy as np
 
+START_NEW_GAME = True
+
 # input the game name here
 GAME='Breakout-v0'
 # number of frames to skip
@@ -28,25 +30,32 @@ def playKFrames(action,env):
         observation = preprocess(observation)
         phi.append(observation)
         Reward+=localreward    
-    return (np.array(phi),action,(Reward>0),terminal)
+    change_reward = 0
+    if Reward > 0:
+    	change_reward = 1
+    elif Reward < 0:
+    	change_reward = -1
+
+    if terminal:
+    	START_NEW_GAME = True
+
+    return (np.array(phi), action, change_reward, terminal)
     
 def playgame():
     # Step 1: init Game    
     env = gym.make(GAME)    
-    # Step 2: init BrainDQN
+    # Step 2: init DQN
     actions = env.action_space.n
-    brain = BrainDQN(actions)
-    # Step 3.1: play game
-    env.reset()
-    action0 = env.action_space.sample()
-    #remember to edit setInitState    
-    brain.setInitState(playKFrames(action0,env)[0])
-
-    # Step 3.2: run the game
+    brain = DQN(actions)
     while 1 != 0:
+    	if START_NEW_GAME:
+    		START_NEW_GAME = False
+	    	env.reset()
+		    action0 = env.action_space.sample()
+		    #remember to edit setInitState    
+		    brain.setInitState(playKFrames(action0,env)[0])
         action = brain.getAction()
-        #remember to edit setPerception
-        #EDIT to start new game once terminal is reached or create a main.py
+        
         brain.setPerception(playKFrames(action,env))
 
 def main():
