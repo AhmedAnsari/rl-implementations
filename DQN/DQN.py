@@ -17,7 +17,8 @@ MIN_SQUARED_GRADIENT = 0.01
 INITIAL_EXPLORATION = 1
 FINAL_EXPLORATION = 0.01
 EXPLORE = 1000000. # frames over which to anneal epsilon
-REPLAY_MEMORY = 1000000 # number of previous transitions to remember, REPLAY_START_SIZE
+REPLAY_MEMORY = 1000000 # number of previous transitions to remember,
+REPLAY_START_SIZE = 50000 #minimum number of previous transitions to be stored before training starts
 NOOP_MAX = 30
 
 OBSERVE = 50000. # timesteps to observe before training
@@ -133,7 +134,7 @@ class DQN:
 		self.replayMemory.append((self.currentState,observation[1],observation[2],observation[0],observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
 		if len(self.replayMemory) > REPLAY_MEMORY:
 			self.replayMemory.popleft()
-		if self.timeStep > OBSERVE:
+		if self.timeStep > OBSERVE and len(self.replayMemory) > REPLAY_START_SIZE:
 			# Train the network
 			self.trainQNetwork()
 		#ACTION needs to be returned in this function
