@@ -17,10 +17,10 @@ MIN_SQUARED_GRADIENT = 0.01
 INITIAL_EXPLORATION = 1
 FINAL_EXPLORATION = 0.01
 EXPLORE = 1000000. # frames over which to anneal epsilon
-REPLAY_MEMORY = 50000 # number of previous transitions to remember, REPLAY_START_SIZE
+REPLAY_MEMORY = 1000000 # number of previous transitions to remember, REPLAY_START_SIZE
 NOOP_MAX = 30
 
-# OBSERVE = 100. # timesteps to observe before training
+OBSERVE = 50000. # timesteps to observe before training
 
 # FINAL_EPSILON = 0#0.001 # final value of epsilon
 # INITIAL_EPSILON = 0#0.01 # starting value of epsilon
@@ -62,11 +62,6 @@ class DQN:
 		
 		self.optim = tf.train.RMSPropOptimizer(learning_rate=LEARNING_RATE, decay = 1, momentum=GRADIENT_MOMENTUM).minimize(self.loss)
 		
-		
-		
-		
-
-
 	def createQNetwork(self):
 		#network weights
 		W_conv1 = self.weight_variable([8, 8, 4, 32])
@@ -103,8 +98,63 @@ class DQN:
 
 		return stateInput,QValue,W_conv1,b_conv1,W_conv2,b_conv2,W_conv3,b_conv3,W_fc1,b_fc1,W_fc2,b_fc2
 
+	def trainQNetwork(self):
+		# Step 1: obtain random minibatch from replay memory
+		minibatch = random.sample(self.replayMemory,BATCH_SIZE)
+		state_batch = [data[0] for data in minibatch]
+		action_batch = [data[1] for data in minibatch]
+		reward_batch = [data[2] for data in minibatch]
+		nextState_batch = [data[3] for data in minibatch]
 
+		# Step 2: calculate y 
+		y_batch = []
+		QValue_batch = self.QValueT.eval(feed_dict={self.stateInputT:nextState_batch})
+		for i in range(0,BATCH_SIZE):
+			terminal = minibatch[i][4]
+			if terminal:
+				y_batch.append(reward_batch[i])
+			else:
+				y_batch.append(reward_batch[i] + GAMMA * np.max(QValue_batch[i]))
 
+		self.trainStep.run(feed_dict={
+			self.target : y_batch,										#CHECK AGAIN
+			self.target_idx : action_batch,								#CHECK AGAIN
+			self.stateInput : state_batch
+			})
+
+		# save network every 100000 iteration
+		if self.timeStep % 10000 == 0:
+			self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step = self.timeStep)
+
+		if self.timeStep % UPDATE_TIME == 0:
+			self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
+
+	def setPerception(self,observation): #nextObservation,action,reward,terminal):
+		self.replayMemory.append((self.currentState,observation[1],observation[2],observation[0],observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
+		if len(self.replayMemory) > REPLAY_MEMORY:
+			self.replayMemory.popleft()
+		if self.timeStep > OBSERVE:
+			# Train the network
+			self.trainQNetwork()
+		#ACTION needs to be returned in this function
+		#PUT in random policy
+
+		# print info
+		state = ""
+		if self.timeStep <= OBSERVE:
+			state = "observe"
+		elif self.timeStep > OBSERVE and self.timeStep <= OBSERVE + EXPLORE:
+			state = "explore"
+		else:
+			state = "train"
+
+		print "TIMESTEP", self.timeStep,# "/ STATE", state, \
+        #    "/ EPSILON", self.epsilon
+        self.currentState = observation[0]
+		self.timeStep += 1
+
+	def setInitState(self,observation):
+		self.currentState = observation[0]
 
 
 	def weight_variable(self, shape):
