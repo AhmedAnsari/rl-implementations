@@ -9,12 +9,13 @@ import gym
 from DQN import DQN
 import numpy as np
 import cPickle as cpickle
+import random
 
 SAMPLE_STATES = 100
 START_NEW_GAME = True
-MAX_FRAMES = 500
+MAX_FRAMES = 50000000
 CURR_REWARD = 0
-EVAL = 10000
+EVAL = 50000
 # input the game name here
 GAME='Breakout-v0'
 # number of frames to skip
@@ -35,7 +36,7 @@ def playKFrames(action,env):
         env.render()
         observation,localreward,terminal,__=env.step(action)
 #        cv2.imshow('game',observation)
-#        print observation        
+#        print observation
         Reward+=localreward
         CURR_REWARD = localreward
     phi = preprocess(observation)
@@ -52,6 +53,7 @@ def playKFrames(action,env):
     return (np.array(phi, dtype = np.float32), action, change_reward, terminal)
 
 def evaluate(brain, env):
+    global START_NEW_GAME
     global CURR_REWARD
     global EVAL
     evalStep = 0
@@ -111,18 +113,19 @@ def playgame():
                     minibatch = random.sample(brain.replayMemory, SAMPLE_STATES)
                     checkStates = [data[0] for data in minibatch]
                     with open("checkStates.txt", "w") as fp:
-                        cpickle.dump(fp, checkStates)
+                        cpickle.dump(checkStates,fp)
                 else:
                     with open("checkStates.txt", 'r') as fp:
-                        cpickle.load(checkStates)
+                        checkStates = cpickle.load(fp)
 
-            evalQValues = brain.QValue.eval(feed_dict={self.stateInput:checkStates})
+            evalQValues = brain.QValue.eval(feed_dict={brain.stateInput:checkStates})
             maxEvalQValues = np.max(evalQValues, axis = 1)
             avgEvalQValues = np.mean(maxEvalQValues)
 
             with open("evalQValue.txt", "a") as fp:
-                print >> fp, avgEvalQValues
-
+                print >>fp,avgEvalQValues
+            print avgEvalQValues
+            reward = evaluate(brain, env)
             with open("reward.txt", "a") as fp:
                 print >> fp, reward
 

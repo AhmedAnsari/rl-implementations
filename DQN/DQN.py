@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import random
 from collections import deque
+import cPickle as cpickle
 #import os
 #os.chdir('/Users/ghulamahmedansari/Documents/Python Scripts/iitm-rl/DQN')
 # Hyper Parameters:
@@ -16,7 +17,7 @@ MIN_SQUARED_GRADIENT = 0.01
 INITIAL_EPSILON = 1 # starting value of epsilon
 FINAL_EPSILON = 0.01 # final value of epsilon
 EXPLORE = 1000000. # frames over which to anneal epsilon
-REPLAY_START_SIZE = 50000 #minimum number of previous transitions to be stored before training starts
+REPLAY_START_SIZE = 50 #minimum number of previous transitions to be stored before training starts
 
 class DQN:
     def __init__(self, actions):
@@ -54,10 +55,12 @@ class DQN:
         self.loss = tf.reduce_mean(tf.square(self.delta), name='loss')
 
         self.optim = tf.train.RMSPropOptimizer(learning_rate=LEARNING_RATE, decay = 1, momentum=GRADIENT_MOMENTUM).minimize(self.loss)
+#        self.optim = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(self.loss)
+
 
         self.session = tf.InteractiveSession()
         self.saver = tf.train.Saver()
-        tf.initialize_all_variables().run()        
+        tf.initialize_all_variables().run()
         # self.session.run(self.copyTargetQNetworkOperation)
         self.copyTargetQNetworkOperation()
 
@@ -144,12 +147,11 @@ class DQN:
             # self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
             self.copyTargetQNetworkOperation()
 
-
     def setPerception(self,observation, evaluate = False): #nextObservation,action,reward,terminal):
         global EXPLORE
         global REPLAY_MEMORY
         global REPLAY_START_SIZE
-        
+
         nextState = np.append(self.currentState[:,:,1:], observation[0].reshape((84,84,1)),axis = 2)
         self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
         if len(self.replayMemory) > REPLAY_MEMORY:
@@ -157,9 +159,8 @@ class DQN:
         if self.timeStep > REPLAY_START_SIZE and len(self.replayMemory) > REPLAY_START_SIZE:
             # Train the network
             if not evaluate:
-            	self.trainQNetwork()
-
-        # print info
+                self.trainQNetwork()
+                
         state = ""
         if self.timeStep <= REPLAY_START_SIZE:
             state = "observe"
@@ -168,11 +169,11 @@ class DQN:
         else:
             state = "train"
 
-        print "TIMESTEP", self.timeStep,# "/ STATE", state, \
+#        print "TIMESTEP", self.timeStep,# "/ STATE", state, \
         #    "/ EPSILON", self.epsilon
         self.currentState = nextState
         if not evaluate:
-        	self.timeStep += 1
+            self.timeStep += 1
 
 
     def getAction(self, evaluate = False):
@@ -182,7 +183,7 @@ class DQN:
 
         curr_epsilon = self.epsilon
         if evaluate:
-        	curr_epsilon = 0.05
+            curr_epsilon = 0.05
         if random.random() <= curr_epsilon:
             action_index = random.randrange(self.actions)
         else:
@@ -190,8 +191,8 @@ class DQN:
             action_index = np.argmax(QValue)
 
         if not evaluate:
-	        if self.epsilon > FINAL_EPSILON and self.timeStep > REPLAY_START_SIZE:
-	            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+            if self.epsilon > FINAL_EPSILON and self.timeStep > REPLAY_START_SIZE:
+                self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
         return action_index
 
