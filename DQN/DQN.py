@@ -3,7 +3,7 @@ import numpy as np
 import random
 from collections import deque
 import cPickle as cpickle
-#import os
+import os
 #os.chdir('/Users/ghulamahmedansari/Documents/Python Scripts/iitm-rl/DQN')
 # Hyper Parameters:
 BATCH_SIZE = 32 # size of minibatch
@@ -140,7 +140,10 @@ class DQN:
 
         # save network every 10000 iteration
         if self.timeStep % 10000 == 0:
-            self.saver.save(self.session, 'Savednetworks/'+'network' + '-dqn', global_step = self.timeStep)
+            if not os.path.exists(os.getcwd()+'/Savednetworks'):
+                os.makedirs(os.getcwd()+'/Savednetworks')
+            self.saver.save(self.session, os.getcwd()+'/Savednetworks/'+'network' + '-dqn', global_step = self.timeStep)
+            #self.saver.save(self.session, 'network' + '-dqn', global_step = self.timeStep)
 
         if self.timeStep % UPDATE_FREQUENCY == 0:
             # self.session.run(self.copyTargetQNetworkOperation)
