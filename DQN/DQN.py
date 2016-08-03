@@ -63,7 +63,6 @@ class DQN:
         self.session = tf.InteractiveSession()
         self.saver = tf.train.Saver()
         tf.initialize_all_variables().run()
-        # self.session.run(self.copyTargetQNetworkOperation)
         self.copyTargetQNetworkOperation()
 
     def copyTargetQNetworkOperation(self):

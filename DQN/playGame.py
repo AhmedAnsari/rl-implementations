@@ -38,8 +38,13 @@ def playKFrames(action,env):
 #        cv2.imshow('game',observation)
 #        print observation
         Reward+=localreward
-        CURR_REWARD = localreward
-    phi = preprocess(observation)
+        CURR_REWARD = Reward
+        if _ == K-2:
+            prevframe=observation
+    observation_=prevframe
+    indices = np.where(observation>prevframe)
+    observation_[indices] = observation[indices]
+    phi = preprocess(observation_)
     change_reward = 0
     if Reward > 0:
         change_reward = 1
