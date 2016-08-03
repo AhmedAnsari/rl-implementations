@@ -6,24 +6,26 @@ import cPickle as cpickle
 import os
 #os.chdir('/Users/ghulamahmedansari/Documents/Python Scripts/iitm-rl/DQN')
 # Hyper Parameters:
-BATCH_SIZE = 32 # size of minibatch
-REPLAY_MEMORY = 1000000 # number of previous transitions to remember,
-GAMMA = 0.99 # decay rate of past observations
-UPDATE_FREQUENCY = 10000 # Number of parameter updates after which the target parameters are updated
-LEARNING_RATE = 0.00025
-GRADIENT_MOMENTUM = 0.95
-SQUARED_GRADIENT_MOMENTUM = 0.95
-MIN_SQUARED_GRADIENT = 0.01
-INITIAL_EPSILON = 1 # starting value of epsilon
-FINAL_EPSILON = 0.01 # final value of epsilon
-EXPLORE = 1000000. # frames over which to anneal epsilon
-REPLAY_START_SIZE = 50 #minimum number of previous transitions to be stored before training starts
+from config import BATCH_SIZE, REPLAY_MEMORY, GAMMA, UPDATE_FREQUENCY, LEARNING_RATE, GRADIENT_MOMENTUM
+from config import SQUARED_GRADIENT_MOMENTUM, MIN_SQUARED_GRADIENT, INITIAL_EPSILON, FINAL_EPSILON, EXPLORE, REPLAY_START_SIZE
+# BATCH_SIZE = 32 # size of minibatch
+# REPLAY_MEMORY = 1000000 # number of previous transitions to remember,
+# GAMMA = 0.99 # decay rate of past observations
+# UPDATE_FREQUENCY = 10000 # Number of parameter updates after which the target parameters are updated
+# LEARNING_RATE = 0.00025
+# GRADIENT_MOMENTUM = 0.95
+# SQUARED_GRADIENT_MOMENTUM = 0.95
+# MIN_SQUARED_GRADIENT = 0.01
+# INITIAL_EPSILON = 1 # starting value of epsilon
+# FINAL_EPSILON = 0.01 # final value of epsilon
+# EXPLORE = 1000000. # frames over which to anneal epsilon
+# REPLAY_START_SIZE = 50 #minimum number of previous transitions to be stored before training starts
 
 class DQN:
     def __init__(self, actions):
-        global LEARNING_RATE
-        global GRADIENT_MOMENTUM
-        global INITIAL_EPSILON
+        # global LEARNING_RATE
+        # global GRADIENT_MOMENTUM
+        # global INITIAL_EPSILON
         #init replay memory
         self.replayMemory = deque()
 
@@ -113,8 +115,8 @@ class DQN:
         return stateInput,QValue,W_conv1,b_conv1,W_conv2,b_conv2,W_conv3,b_conv3,W_fc1,b_fc1,W_fc2,b_fc2
 
     def trainQNetwork(self):
-        global BATCH_SIZE
-        global GAMMA
+        # global BATCH_SIZE
+        # global GAMMA
         # Step 1: obtain random minibatch from replay memory
         minibatch = random.sample(self.replayMemory,BATCH_SIZE)
         state_batch = [data[0] for data in minibatch]
@@ -151,9 +153,9 @@ class DQN:
             self.copyTargetQNetworkOperation()
 
     def setPerception(self,observation, evaluate = False): #nextObservation,action,reward,terminal):
-        global EXPLORE
-        global REPLAY_MEMORY
-        global REPLAY_START_SIZE
+        # global EXPLORE
+        # global REPLAY_MEMORY
+        # global REPLAY_START_SIZE
 
         nextState = np.append(self.currentState[:,:,1:], observation[0].reshape((84,84,1)),axis = 2)
         self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
@@ -180,8 +182,8 @@ class DQN:
 
 
     def getAction(self, evaluate = False):
-        global EXPLORE
-        global REPLAY_START_SIZE
+        # global EXPLORE
+        # global REPLAY_START_SIZE
         action_index = 0
 
         curr_epsilon = self.epsilon

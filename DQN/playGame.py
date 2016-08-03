@@ -10,16 +10,16 @@ from DQN import DQN
 import numpy as np
 import cPickle as cpickle
 import random
-
-SAMPLE_STATES = 100
-START_NEW_GAME = True
-MAX_FRAMES = 50000000
-CURR_REWARD = 0
-EVAL = 50000
-# input the game name here
-GAME='Breakout-v0'
-# number of frames to skip
-K = 4
+from config import SAMPLE_STATES, START_NEW_GAME, MAX_FRAMES, CURR_REWARD, EVAL, GAME, K
+# SAMPLE_STATES = 100
+# START_NEW_GAME = True
+# MAX_FRAMES = 50000000
+# CURR_REWARD = 0
+# EVAL = 50000
+# # input the game name here
+# GAME='Breakout-v0'
+# # number of frames to skip
+# K = 4
 # preprocess raw image to 84*84 Y channel(luminance)
 def preprocess(observation):
     # change color space from RGB to YCrCb
@@ -29,8 +29,8 @@ def preprocess(observation):
     return np.array(observation)
 
 def playKFrames(action,env):
-    global START_NEW_GAME
-    global CURR_REWARD
+    # global START_NEW_GAME
+    # global CURR_REWARD
     Reward = 0
     for _ in xrange(K):
         env.render()
@@ -53,9 +53,9 @@ def playKFrames(action,env):
     return (np.array(phi, dtype = np.float32), action, change_reward, terminal)
 
 def evaluate(brain, env):
-    global START_NEW_GAME
-    global CURR_REWARD
-    global EVAL
+    # global START_NEW_GAME
+    # global CURR_REWARD
+    # global EVAL
     evalStep = 0
     numEpisode = 1.
     totalReward = 0
@@ -83,10 +83,10 @@ def evaluate(brain, env):
 
 
 def playgame():
-    global START_NEW_GAME
-    global MAX_FRAMES
-    global EVAL
-    global SAMPLE_STATES
+    # global START_NEW_GAME
+    # global MAX_FRAMES
+    # global EVAL
+    # global SAMPLE_STATES
     # Step 1: init Game
     env = gym.make(GAME)
     # Step 2: init DQN
