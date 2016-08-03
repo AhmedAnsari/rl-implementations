@@ -59,15 +59,19 @@ def playKFrames(action,env,stateDict):
 
     return (np.array(phi, dtype = np.float32), action, change_reward, terminal)
 
-def evaluate(brain, env, stateDict):
+def evaluate(brain, stateDict):
     # global START_NEW_GAME
     # global CURR_REWARD
     # global EVAL
+    #create  anew environment just for evaluation
+    env = gym.make(stateDict['GAME'])
+    env.reset()
+    env.render()
     evalStep = 0
     numEpisode = 1.
     totalReward = 0
     while True:
-        if evalStep >= 10000:
+        if evalStep >= stateDict['NUM_EVAL_STEPS']:
             break
         if stateDict['START_NEW_GAME']:
             numEpisode += 1
@@ -132,7 +136,7 @@ def playgame(stateDict):
             with open("evalQValue.txt", "a") as fp:
                 print >>fp,avgEvalQValues
             print avgEvalQValues
-            reward = evaluate(brain, env, stateDict)
+            reward = evaluate(brain, stateDict)
             with open("reward.txt", "a") as fp:
                 print >> fp, reward
 
