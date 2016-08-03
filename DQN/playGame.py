@@ -10,7 +10,8 @@ from DQN import DQN
 import numpy as np
 import cPickle as cpickle
 import random
-from config import SAMPLE_STATES, START_NEW_GAME, MAX_FRAMES, CURR_REWARD, EVAL, GAME, K
+from config import createstateDict 
+#from config import SAMPLE_STATES, START_NEW_GAME, MAX_FRAMES, CURR_REWARD, EVAL, GAME, K
 # SAMPLE_STATES = 100
 # START_NEW_GAME = True
 # MAX_FRAMES = 50000000
@@ -28,17 +29,18 @@ def preprocess(observation):
     observation = cv2.resize(observation[:,:,0],(84,84))
     return np.array(observation)
 
-def playKFrames(action,env):
+def playKFrames(action,env,stateDict):
     # global START_NEW_GAME
     # global CURR_REWARD
     Reward = 0
+    K = stateDict['K']
     for _ in xrange(K):
         env.render()
         observation,localreward,terminal,__=env.step(action)
 #        cv2.imshow('game',observation)
 #        print observation
         Reward+=localreward
-        CURR_REWARD = Reward
+        stateDict['CURR_REWARD'] = Reward
         if _ == K-2:
             prevframe=observation
     observation_=prevframe
@@ -53,11 +55,11 @@ def playKFrames(action,env):
 
 
     if terminal:
-        START_NEW_GAME = True
+        stateDict['START_NEW_GAME'] = True
 
     return (np.array(phi, dtype = np.float32), action, change_reward, terminal)
 
-def evaluate(brain, env):
+def evaluate(brain, env, stateDict):
     # global START_NEW_GAME
     # global CURR_REWARD
     # global EVAL
@@ -67,19 +69,19 @@ def evaluate(brain, env):
     while True:
         if evalStep >= 10000:
             break
-        if START_NEW_GAME:
+        if stateDict['START_NEW_GAME']:
             numEpisode += 1
-            START_NEW_GAME = False
+            stateDict['START_NEW_GAME'] = False
             env.reset()
             init_state = []
             for i in range(4):
                 action0 = env.action_space.sample()
-                init_state.append(playKFrames(action0,env)[0])
+                init_state.append(playKFrames(action0, env, stateDict)[0])
             brain.setInitState(init_state)
         action = brain.getAction(True)
 
-        brain.setPerception(playKFrames(action,env), True)
-        totalReward += CURR_REWARD
+        brain.setPerception(playKFrames(action, env, stateDict), True)
+        totalReward += stateDict['CURR_REWARD']
         evalStep += 1
 
     totalReward /= numEpisode
@@ -87,35 +89,35 @@ def evaluate(brain, env):
 
 
 
-def playgame():
+def playgame(stateDict):
     # global START_NEW_GAME
     # global MAX_FRAMES
     # global EVAL
     # global SAMPLE_STATES
     # Step 1: init Game
-    env = gym.make(GAME)
+    env = gym.make(stateDict['GAME'])
     # Step 2: init DQN
     actions = env.action_space.n
-    brain = DQN(actions)
+    brain = DQN(actions, stateDict)
     checkStates = None
     while True:
-        if START_NEW_GAME:
-            START_NEW_GAME = False
+        if stateDict['START_NEW_GAME']:
+            stateDict['START_NEW_GAME'] = False
             env.reset()
             init_state = []
             for i in range(4):
                 action0 = env.action_space.sample()
-                init_state.append(playKFrames(action0,env)[0])
+                init_state.append(playKFrames(action0, env, stateDict)[0])
             brain.setInitState(init_state)
         action = brain.getAction()
 
-        brain.setPerception(playKFrames(action,env))
+        brain.setPerception(playKFrames(action, env, stateDict))
 
-        if (brain.timeStep % EVAL == 0) and (brain.timeStep != 0):
+        if (brain.timeStep % stateDict['EVAL'] == 0) and (brain.timeStep != 0):
 
-            if (brain.timeStep / EVAL == 1):
+            if (brain.timeStep / stateDict['EVAL'] == 1):
                 if not ((os.path.exists("checkStates.txt")) and (os.path.getsize("checkStates.txt") > 0)):
-                    minibatch = random.sample(brain.replayMemory, SAMPLE_STATES)
+                    minibatch = random.sample(brain.replayMemory, stateDict['SAMPLE_STATES'])
                     checkStates = [data[0] for data in minibatch]
                     with open("checkStates.txt", "w") as fp:
                         cpickle.dump(checkStates,fp)
@@ -130,16 +132,17 @@ def playgame():
             with open("evalQValue.txt", "a") as fp:
                 print >>fp,avgEvalQValues
             print avgEvalQValues
-            reward = evaluate(brain, env)
+            reward = evaluate(brain, env, stateDict)
             with open("reward.txt", "a") as fp:
                 print >> fp, reward
 
-        if (brain.timeStep * K) > MAX_FRAMES:
+        if (brain.timeStep * stateDict['K']) > stateDict['MAX_FRAMES']:
             break
     brain.session.close()
 
 def main():
-    playgame()
+    stateDict = createstateDict()
+    playgame(stateDict)
 
 if __name__ == '__main__':
     main()

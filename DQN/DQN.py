@@ -6,8 +6,8 @@ import cPickle as cpickle
 import os
 #os.chdir('/Users/ghulamahmedansari/Documents/Python Scripts/iitm-rl/DQN')
 # Hyper Parameters:
-from config import BATCH_SIZE, REPLAY_MEMORY, GAMMA, UPDATE_FREQUENCY, LEARNING_RATE, GRADIENT_MOMENTUM
-from config import SQUARED_GRADIENT_MOMENTUM, MIN_SQUARED_GRADIENT, INITIAL_EPSILON, FINAL_EPSILON, EXPLORE, REPLAY_START_SIZE
+#from config import BATCH_SIZE, REPLAY_MEMORY, GAMMA, UPDATE_FREQUENCY, LEARNING_RATE, GRADIENT_MOMENTUM
+#from config import SQUARED_GRADIENT_MOMENTUM, MIN_SQUARED_GRADIENT, INITIAL_EPSILON, FINAL_EPSILON, EXPLORE, REPLAY_START_SIZE
 # BATCH_SIZE = 32 # size of minibatch
 # REPLAY_MEMORY = 1000000 # number of previous transitions to remember,
 # GAMMA = 0.99 # decay rate of past observations
@@ -22,7 +22,8 @@ from config import SQUARED_GRADIENT_MOMENTUM, MIN_SQUARED_GRADIENT, INITIAL_EPSI
 # REPLAY_START_SIZE = 50 #minimum number of previous transitions to be stored before training starts
 
 class DQN:
-    def __init__(self, actions):
+    def __init__(self, actions, stateDict):
+        self.stateDict = stateDict
         # global LEARNING_RATE
         # global GRADIENT_MOMENTUM
         # global INITIAL_EPSILON
@@ -31,7 +32,7 @@ class DQN:
 
         #init parameters
         self.timeStep = 0
-        self.epsilon = INITIAL_EPSILON
+        self.epsilon = self.stateDict['INITIAL_EPSILON']
         self.actions = actions
 
         #init Q network
@@ -56,7 +57,7 @@ class DQN:
 
         self.loss = tf.reduce_mean(tf.square(self.delta), name='loss')
 
-        self.optim = tf.train.RMSPropOptimizer(learning_rate=LEARNING_RATE, decay = 1, momentum=GRADIENT_MOMENTUM).minimize(self.loss)
+        self.optim = tf.train.RMSPropOptimizer(learning_rate=self.stateDict['LEARNING_RATE'], decay = 1, momentum=self.stateDict['GRADIENT_MOMENTUM']).minimize(self.loss)
 #        self.optim = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(self.loss)
 
 
@@ -117,7 +118,7 @@ class DQN:
         # global BATCH_SIZE
         # global GAMMA
         # Step 1: obtain random minibatch from replay memory
-        minibatch = random.sample(self.replayMemory,BATCH_SIZE)
+        minibatch = random.sample(self.replayMemory,self.stateDict['BATCH_SIZE'])
         state_batch = [data[0] for data in minibatch]
         action_batch = [data[1] for data in minibatch]
         reward_batch = [data[2] for data in minibatch]
@@ -126,12 +127,12 @@ class DQN:
         # Step 2: calculate y
         y_batch = []
         QValue_batch = self.QValueT.eval(feed_dict={self.stateInputT:nextState_batch})
-        for i in range(0,BATCH_SIZE):
+        for i in range(0,self.stateDict['BATCH_SIZE']):
             terminal = minibatch[i][4]
             if terminal:
                 y_batch.append(reward_batch[i])
             else:
-                y_batch.append(reward_batch[i] + GAMMA * np.max(QValue_batch[i]))
+                y_batch.append(reward_batch[i] + self.stateDict['GAMMA']* np.max(QValue_batch[i]))
 
         self.optim.run(feed_dict={
                 self.target : y_batch,                                                                          #CHECK AGAIN
@@ -146,7 +147,7 @@ class DQN:
             self.saver.save(self.session, os.getcwd()+'/Savednetworks/'+'network' + '-dqn', global_step = self.timeStep)
             #self.saver.save(self.session, 'network' + '-dqn', global_step = self.timeStep)
 
-        if self.timeStep % UPDATE_FREQUENCY == 0:
+        if self.timeStep % self.stateDict['UPDATE_FREQUENCY'] == 0:
             # self.session.run(self.copyTargetQNetworkOperation)
             # self.copyTargetQNetworkOperation = [self.W_conv1T.assign(self.W_conv1),self.b_conv1T.assign(self.b_conv1),self.W_conv2T.assign(self.W_conv2),self.b_conv2T.assign(self.b_conv2),self.W_conv3T.assign(self.W_conv3),self.b_conv3T.assign(self.b_conv3),self.W_fc1T.assign(self.W_fc1),self.b_fc1T.assign(self.b_fc1),self.W_fc2T.assign(self.W_fc2),self.b_fc2T.assign(self.b_fc2)]
             self.copyTargetQNetworkOperation()
@@ -158,17 +159,17 @@ class DQN:
 
         nextState = np.append(self.currentState[:,:,1:], observation[0].reshape((84,84,1)),axis = 2)
         self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
-        if len(self.replayMemory) > REPLAY_MEMORY:
+        if len(self.replayMemory) > self.stateDict['REPLAY_MEMORY']:
             self.replayMemory.popleft()
-        if self.timeStep > REPLAY_START_SIZE and len(self.replayMemory) > REPLAY_START_SIZE:
+        if self.timeStep > self.stateDict['REPLAY_START_SIZE'] and len(self.replayMemory) > self.stateDict['REPLAY_START_SIZE']:
             # Train the network
             if not evaluate:
                 self.trainQNetwork()
                 
         state = ""
-        if self.timeStep <= REPLAY_START_SIZE:
+        if self.timeStep <= self.stateDict['REPLAY_START_SIZE']:
             state = "observe"
-        elif self.timeStep > REPLAY_START_SIZE and self.timeStep <= REPLAY_START_SIZE + EXPLORE:
+        elif self.timeStep > self.stateDict['REPLAY_START_SIZE'] and self.timeStep <= self.stateDict['REPLAY_START_SIZE']+ self.stateDict['EXPLORE']:
             state = "explore"
         else:
             state = "train"
@@ -195,8 +196,8 @@ class DQN:
             action_index = np.argmax(QValue)
 
         if not evaluate:
-            if self.epsilon > FINAL_EPSILON and self.timeStep > REPLAY_START_SIZE:
-                self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+            if self.epsilon > self.stateDict['FINAL_EPSILON'] and self.timeStep > self.stateDict['REPLAY_START_SIZE']:
+                self.epsilon -= (self.stateDict['INITIAL_EPSILON'] - self.stateDict['FINAL_EPSILON']) / self.stateDict['EXPLORE']
 
         return action_index
 
