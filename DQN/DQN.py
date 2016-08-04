@@ -63,7 +63,8 @@ class DQN:
 
         self.session = tf.InteractiveSession()
         self.saver = tf.train.Saver()
-        tf.initialize_all_variables().run()
+        if not(self.stateDict['LOAD_WEIGHTS'] and self.load_weights()):
+            tf.initialize_all_variables().run()
         self.copyTargetQNetworkOperation()
 
     def copyTargetQNetworkOperation(self):
@@ -200,6 +201,19 @@ class DQN:
                 self.epsilon -= (self.stateDict['INITIAL_EPSILON'] - self.stateDict['FINAL_EPSILON']) / self.stateDict['EXPLORE']
 
         return action_index
+    
+    def load_weights(self):
+        print 'inload weights'
+        if not os.path.exists(os.getcwd()+'/Savednetworks'):
+            return False    
+        
+        list_dir = sorted(os.listdir(os.getcwd()+'/Savednetworks'))
+        if not any(item.startswith('network-dqn') for item in list_dir):
+            return False
+        
+        print 'weights loaded'
+        self.saver.restore(self.session, os.getcwd()+'/Savednetworks/'+list_dir[-2])        
+        return True
 
     def setInitState(self,observation):
         self.currentState = np.array(observation).reshape([84,84,4])

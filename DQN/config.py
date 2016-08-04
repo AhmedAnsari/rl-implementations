@@ -27,4 +27,5 @@ def createstateDict():
     stateDict['NUM_EVAL_STEPS'] = 10000
     stateDict['GAME'] = 'Breakout-v0'
     stateDict['K'] = 4
+    stateDict['LOAD_WEIGHTS'] = True
     return stateDict
