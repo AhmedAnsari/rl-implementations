@@ -47,11 +47,11 @@ def playKFrames(action,env,stateDict):
     indices = np.where(observation>prevframe)
     observation_[indices] = observation[indices]
     phi = preprocess(observation_)
+
     change_reward = 0
-    if Reward > 0:
-        change_reward = 1
-    elif Reward < 0:
-        change_reward = -1
+    if stateDict['clipR']:
+        change_reward = max(stateDict['minR'], min(stateDict['maxR'], Reward))
+
 
 
     if terminal:

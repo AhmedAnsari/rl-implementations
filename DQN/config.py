@@ -32,4 +32,7 @@ def createstateDict():
     stateDict['maxDelta'] = 1
     stateDict['minDelta'] = -1
     stateDict['clipDelta'] = True
+    stateDict['minR'] = -1
+    stateDict['maxR'] = 1
+    stateDict['clipR'] = True
     return stateDict
