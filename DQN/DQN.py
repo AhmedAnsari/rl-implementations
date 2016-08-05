@@ -128,12 +128,18 @@ class DQN:
         # Step 2: calculate y
         y_batch = []
         QValue_batch = self.QValueT.eval(feed_dict={self.stateInputT:nextState_batch})
+        index_batch = []
+        if stateDict['Double_DQN']:
+            index_batch = self.QValue.eval(feed_dict={self.stateInputT:nextState_batch})
         for i in range(0,self.stateDict['BATCH_SIZE']):
             terminal = minibatch[i][4]
             if terminal:
                 y_batch.append(reward_batch[i])
             else:
-                y_batch.append(reward_batch[i] + self.stateDict['GAMMA']* np.max(QValue_batch[i]))
+                if stateDict['Double_DQN']:
+                    y_batch.append(reward_batch[i] + self.stateDict['GAMMA']* QValue_batch[np.argmax(index_batch[i])])
+                else:
+                    y_batch.append(reward_batch[i] + self.stateDict['GAMMA']* np.max(QValue_batch[i]))
 
         self.optim.run(feed_dict={
                 self.target : y_batch,                                                                          #CHECK AGAIN

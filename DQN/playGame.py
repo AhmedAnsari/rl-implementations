@@ -150,6 +150,8 @@ def playgame(stateDict):
 
 def main():
     stateDict = createstateDict()
+    if stateDict['Double_DQN']:
+        stateDict['UPDATE_FREQUENCY'] = 30000
     playgame(stateDict)
 
 if __name__ == '__main__':
