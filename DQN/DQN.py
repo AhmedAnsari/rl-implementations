@@ -120,10 +120,10 @@ class DQN:
         # global GAMMA
         # Step 1: obtain random minibatch from replay memory
         minibatch = random.sample(self.replayMemory,self.stateDict['BATCH_SIZE'])
-        state_batch = [data[0] for data in minibatch]
+        state_batch = [data[0].astype(np.float32) for data in minibatch]
         action_batch = [data[1] for data in minibatch]
         reward_batch = [data[2] for data in minibatch]
-        nextState_batch = [data[3] for data in minibatch]
+        nextState_batch = [data[3].astype(np.float32) for data in minibatch]
 
         # Step 2: calculate y
         y_batch = []
@@ -216,7 +216,7 @@ class DQN:
         return True
 
     def setInitState(self,observation):
-        self.currentState = np.array(observation).reshape([84,84,4])
+        self.currentState = np.array(observation, dtype=np.uint8).reshape([84,84,4])
 
     def weight_variable(self, shape):
         initial = tf.truncated_normal(shape, stddev = 0.01)

@@ -27,7 +27,7 @@ def preprocess(observation):
     observation = cv2.cvtColor(observation, cv2.COLOR_BGR2YCR_CB)
     #extract the Y channel and resize
     observation = cv2.resize(observation[:,:,0],(84,84))
-    return np.array(observation)
+    return observation
 
 def playKFrames(action,env,stateDict):
     # global START_NEW_GAME
@@ -57,7 +57,7 @@ def playKFrames(action,env,stateDict):
     if terminal:
         stateDict['START_NEW_GAME'] = True
 
-    return (np.array(phi, dtype = np.float32), action, change_reward, terminal)
+    return (phi, action, change_reward, terminal)
 
 def evaluate(brain, stateDict):
     # global START_NEW_GAME
@@ -89,7 +89,9 @@ def evaluate(brain, stateDict):
         evalStep += 1
 
     totalReward /= numEpisode
+    env.render(close=True)
     return totalReward
+    
 
 
 
@@ -143,6 +145,8 @@ def playgame(stateDict):
         if (brain.timeStep * stateDict['K']) > stateDict['MAX_FRAMES']:
             break
     brain.session.close()
+    env.render(close=True)
+    
 
 def main():
     stateDict = createstateDict()
