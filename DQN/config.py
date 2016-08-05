@@ -29,4 +29,7 @@ def createstateDict():
     stateDict['K'] = 4
     stateDict['LOAD_WEIGHTS'] = True
     stateDict['Double_DQN'] = False
+    stateDict['maxDelta'] = 1
+    stateDict['minDelta'] = -1
+    stateDict['clipDelta'] = True
     return stateDict

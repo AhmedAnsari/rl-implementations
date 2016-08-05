@@ -53,6 +53,10 @@ class DQN:
 
         self.delta = self.target - q_acted
 
+
+        if stateDict['clipDelta']:
+            self.delta = tf.clip_by_value(self.delta, stateDict['minDelta'], stateDict['maxDelta'], name='clipped_delta')
+
         self.global_step = tf.Variable(0, trainable = False)
 
         self.loss = tf.reduce_mean(tf.square(self.delta), name='loss')
