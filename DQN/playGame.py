@@ -35,7 +35,7 @@ def playKFrames(action,env,stateDict):
     Reward = 0
     K = stateDict['K']
     for _ in xrange(K):
-        env.render()
+        # env.render()
         observation,localreward,terminal,__=env.step(action)
 #        cv2.imshow('game',observation)
 #        print observation
@@ -66,7 +66,7 @@ def evaluate(brain, stateDict):
     #create  anew environment just for evaluation
     env = gym.make(stateDict['GAME'])
     env.reset()
-    env.render()
+    # env.render()
     evalStep = 0
     numEpisode = 1.
     totalReward = 0
@@ -89,7 +89,7 @@ def evaluate(brain, stateDict):
         evalStep += 1
 
     totalReward /= numEpisode
-    env.render(close=True)
+    # env.render(close=True)
     return totalReward
     
 
@@ -145,7 +145,7 @@ def playgame(stateDict):
         if (brain.timeStep * stateDict['K']) > stateDict['MAX_FRAMES']:
             break
     brain.session.close()
-    env.render(close=True)
+    # env.render(close=True)
     
 
 def main():
