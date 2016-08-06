@@ -29,6 +29,11 @@ class DQN:
         # global INITIAL_EPSILON
         #init replay memory
         self.replayMemory = deque()
+        self.frameQueue = deque()
+
+        #Start Index to keep track of start of Replay Memory
+        self.startCounter= 0
+        self.currentState = -(self.stateDict['K']+1) # In Init state dunction we are incrementing so we are starting from negative value here
 
         #init parameters
         self.timeStep = 0
@@ -124,10 +129,16 @@ class DQN:
         # global GAMMA
         # Step 1: obtain random minibatch from replay memory
         minibatch = random.sample(self.replayMemory,self.stateDict['BATCH_SIZE'])
-        state_batch = [data[0].astype(np.float32) for data in minibatch]
+
+        state_batch = [(self.frameQueue[data[0] - self.startCounter : data[0] - self.startCounter +4]).astype(np.float32) for data in minibatch]
+
+        # state_batch = [data[0].astype(np.float32) for data in minibatch]
         action_batch = [data[1] for data in minibatch]
         reward_batch = [data[2] for data in minibatch]
-        nextState_batch = [data[3].astype(np.float32) for data in minibatch]
+
+
+        nextState_batch = [(self.frameQueue[data[3] - self.startCounter: data[3] - self.startCounter +4]).astype(np.float32) for data in minibatch]
+        # nextState_batch = [data[3].astype(np.float32) for data in minibatch]
 
         # Step 2: calculate y
         y_batch = []
@@ -168,10 +179,18 @@ class DQN:
         # global REPLAY_MEMORY
         # global REPLAY_START_SIZE
 
-        nextState = np.append(self.currentState[:,:,1:], observation[0].reshape((84,84,1)),axis = 2)
+        nextState = self.currentState+1
         self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
+        self.frameQueue.append(observation[0])
+
         if len(self.replayMemory) > self.stateDict['REPLAY_MEMORY']:
-            self.replayMemory.popleft()
+        	stateIndex = self.replayMemory[0][0]
+        	indexDiff = stateIndex - self.startCounter + 1
+        	self.startCounter = stateIndex + 1
+        	for _ in range(indexDiff):
+        		self.frameQueue.popleft()
+        	self.replayMemory.popleft()
+
         if self.timeStep > self.stateDict['REPLAY_START_SIZE'] and len(self.replayMemory) > self.stateDict['REPLAY_START_SIZE']:
             # Train the network
             if not evaluate:
@@ -226,7 +245,10 @@ class DQN:
         return True
 
     def setInitState(self,observation):
-        self.currentState = np.array(observation, dtype=np.uint8).reshape([84,84,4])
+        self.currentState += self.stateDict['K'] + 1 # 1 for the the next state.
+        for ind in range(self.stateDict['K']):
+        	self.frameQueue.append(observation[ind].reshape((84, 84)))
+
 
     def weight_variable(self, shape):
         initial = tf.truncated_normal(shape, stddev = 0.01)

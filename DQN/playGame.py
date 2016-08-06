@@ -35,7 +35,7 @@ def playKFrames(action,env,stateDict):
     Reward = 0
     K = stateDict['K']
     for _ in xrange(K):
-        # env.render()
+        env.render()
         observation,localreward,terminal,__=env.step(action)
 #        cv2.imshow('game',observation)
 #        print observation
@@ -124,7 +124,9 @@ def playgame(stateDict):
             if (brain.timeStep / stateDict['EVAL'] == 1):
                 if not ((os.path.exists("checkStates.txt")) and (os.path.getsize("checkStates.txt") > 0)):
                     minibatch = random.sample(brain.replayMemory, stateDict['SAMPLE_STATES'])
-                    checkStates = [data[0] for data in minibatch]
+                    checkStates = [(brain.frameQueue[data[0] - brain.startCounter: data[0] - brain.startCounter+4]) for data in minibatch]
+
+                    # checkStates = [data[0] for data in minibatch]
                     with open("checkStates.txt", "w") as fp:
                         cpickle.dump(checkStates,fp)
                 else:
@@ -138,6 +140,7 @@ def playgame(stateDict):
             with open("evalQValue.txt", "a") as fp:
                 print >>fp,avgEvalQValues
             print avgEvalQValues
+            storeCurrState = brain.current
             reward = evaluate(brain, stateDict)
             with open("reward.txt", "a") as fp:
                 print >> fp, reward
