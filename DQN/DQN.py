@@ -33,8 +33,11 @@ class DQN:
 
         #Start Index to keep track of start of Replay Memory
         self.startCounter= 0
-        self.currentState = -(self.stateDict['K']+1) # In Init state dunction we are incrementing so we are starting from negative value here
+        self.currentState = -(self.stateDict['K']) # In Init state dunction we are incrementing so we are starting from negative value here
 
+
+        self.evalCurrentState = []
+        self.evalNextState = []
         #init parameters
         self.timeStep = 0
         self.epsilon = self.stateDict['INITIAL_EPSILON']
@@ -59,8 +62,8 @@ class DQN:
         self.delta = self.target - q_acted
 
 
-        if stateDict['clipDelta']:
-            self.delta = tf.clip_by_value(self.delta, stateDict['minDelta'], stateDict['maxDelta'], name='clipped_delta')
+        if self.stateDict['clipDelta']:
+            self.delta = tf.clip_by_value(self.delta, self.stateDict['minDelta'], self.stateDict['maxDelta'], name='clipped_delta')
 
         self.global_step = tf.Variable(0, trainable = False)
 
@@ -124,34 +127,44 @@ class DQN:
 
         return stateInput,QValue,W_conv1,b_conv1,W_conv2,b_conv2,W_conv3,b_conv3,W_fc1,b_fc1,W_fc2,b_fc2
 
+    def getState(self, index):
+        # print index
+        # print index - self.startCounter
+        # print len(self.frameQueue)
+        state = []
+        for i in range(4):
+            state.append(self.frameQueue[index - self.startCounter + i])
+        return np.array(state).reshape((84, 84, 4))
+
     def trainQNetwork(self):
         # global BATCH_SIZE
         # global GAMMA
         # Step 1: obtain random minibatch from replay memory
         minibatch = random.sample(self.replayMemory,self.stateDict['BATCH_SIZE'])
 
-        state_batch = [(self.frameQueue[data[0] - self.startCounter : data[0] - self.startCounter +4]).astype(np.float32) for data in minibatch]
+        # state_batch = [(self.frameQueue[data[0] - self.startCounter : data[0] - self.startCounter +4]).astype(np.float32) for data in minibatch]
+        state_batch = [(self.getState(data[0])).astype(np.float32) for data in minibatch]
 
         # state_batch = [data[0].astype(np.float32) for data in minibatch]
         action_batch = [data[1] for data in minibatch]
         reward_batch = [data[2] for data in minibatch]
 
 
-        nextState_batch = [(self.frameQueue[data[3] - self.startCounter: data[3] - self.startCounter +4]).astype(np.float32) for data in minibatch]
+        nextState_batch = [(self.getState(data[3])).astype(np.float32) for data in minibatch]
         # nextState_batch = [data[3].astype(np.float32) for data in minibatch]
 
         # Step 2: calculate y
         y_batch = []
         QValue_batch = self.QValueT.eval(feed_dict={self.stateInputT:nextState_batch})
         index_batch = []
-        if stateDict['Double_DQN']:
+        if self.stateDict['Double_DQN']:
             index_batch = self.QValue.eval(feed_dict={self.stateInputT:nextState_batch})
         for i in range(0,self.stateDict['BATCH_SIZE']):
             terminal = minibatch[i][4]
             if terminal:
                 y_batch.append(reward_batch[i])
             else:
-                if stateDict['Double_DQN']:
+                if self.stateDict['Double_DQN']:
                     y_batch.append(reward_batch[i] + self.stateDict['GAMMA']* QValue_batch[np.argmax(index_batch[i])])
                 else:
                     y_batch.append(reward_batch[i] + self.stateDict['GAMMA']* np.max(QValue_batch[i]))
@@ -178,37 +191,42 @@ class DQN:
         # global EXPLORE
         # global REPLAY_MEMORY
         # global REPLAY_START_SIZE
-
-        nextState = self.currentState+1
-        self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
-        self.frameQueue.append(observation[0])
-
-        if len(self.replayMemory) > self.stateDict['REPLAY_MEMORY']:
-        	stateIndex = self.replayMemory[0][0]
-        	indexDiff = stateIndex - self.startCounter + 1
-        	self.startCounter = stateIndex + 1
-        	for _ in range(indexDiff):
-        		self.frameQueue.popleft()
-        	self.replayMemory.popleft()
-
-        if self.timeStep > self.stateDict['REPLAY_START_SIZE'] and len(self.replayMemory) > self.stateDict['REPLAY_START_SIZE']:
-            # Train the network
-            if not evaluate:
-                self.trainQNetwork()
-                
-        state = ""
-        if self.timeStep <= self.stateDict['REPLAY_START_SIZE']:
-            state = "observe"
-        elif self.timeStep > self.stateDict['REPLAY_START_SIZE'] and self.timeStep <= self.stateDict['REPLAY_START_SIZE']+ self.stateDict['EXPLORE']:
-            state = "explore"
-        else:
-            state = "train"
-
-#        print "TIMESTEP", self.timeStep,# "/ STATE", state, \
-        #    "/ EPSILON", self.epsilon
-        self.currentState = nextState
+        # print "*" * 23
         if not evaluate:
+            nextState = self.currentState+1
+            self.replayMemory.append((self.currentState,observation[1],observation[2],nextState,observation[3])) #TUPLE : (state, action, reward, nextState, terminal)
+            self.frameQueue.append(observation[0])
+            # print self.currentState
+            # print len(self.replayMemory)
+            # print len(self.frameQueue)
+
+            if len(self.replayMemory) > self.stateDict['REPLAY_MEMORY']:
+            	stateIndex = self.replayMemory[0][0]
+            	indexDiff = stateIndex - self.startCounter + 1
+            	self.startCounter = stateIndex + 1
+            	for _ in range(indexDiff):
+            		self.frameQueue.popleft()
+            	self.replayMemory.popleft()
+
+            if self.timeStep > self.stateDict['REPLAY_START_SIZE'] and len(self.replayMemory) > self.stateDict['REPLAY_START_SIZE']:
+                # Train the network
+                self.trainQNetwork()
+                    
+            state = ""
+            if self.timeStep <= self.stateDict['REPLAY_START_SIZE']:
+                state = "observe"
+            elif self.timeStep > self.stateDict['REPLAY_START_SIZE'] and self.timeStep <= self.stateDict['REPLAY_START_SIZE']+ self.stateDict['EXPLORE']:
+                state = "explore"
+            else:
+                state = "train"
+
+    #        print "TIMESTEP", self.timeStep,# "/ STATE", state, \
+            #    "/ EPSILON", self.epsilon
+            self.currentState = nextState
             self.timeStep += 1
+        else:
+            self.evalNextState = np.append(self.evalCurrentState[:,:,1:], observation[0].reshape((84,84,1)),axis = 2)
+            self.evalCurrentState = self.evalNextState
 
 
     def getAction(self, evaluate = False):
@@ -222,7 +240,16 @@ class DQN:
         if random.random() <= curr_epsilon:
             action_index = random.randrange(self.actions)
         else:
-            QValue = self.QValue.eval(feed_dict={self.stateInput:[self.currentState]})[0]
+            QValue = [0]
+            if not evaluate:
+                stateVar = self.getState(self.currentState)
+                # stateVar = self.frameQueue[self.currentState - self.startCounter, self.currentState - self.startCounter + 4]
+                QValue = self.QValue.eval(feed_dict={self.stateInput:[stateVar]})[0]
+            else:
+                # print len(self.evalCurrentState)
+                # print self.evalCurrentState
+                QValue = self.QValue.eval(feed_dict={self.stateInput:[self.evalCurrentState]})[0]
+
             action_index = np.argmax(QValue)
 
         if not evaluate:
@@ -244,10 +271,13 @@ class DQN:
         self.saver.restore(self.session, os.getcwd()+'/Savednetworks/'+list_dir[-2])        
         return True
 
-    def setInitState(self,observation):
-        self.currentState += self.stateDict['K'] + 1 # 1 for the the next state.
-        for ind in range(self.stateDict['K']):
-        	self.frameQueue.append(observation[ind].reshape((84, 84)))
+    def setInitState(self,observation, evaluate = False):
+        if not evaluate:
+            self.currentState += self.stateDict['K']
+            for ind in range(self.stateDict['K']):
+            	self.frameQueue.append(observation[ind].reshape((84, 84)))
+        else:
+            self.evalCurrentState = np.array(observation, dtype=np.uint8).reshape([84,84,4])
 
 
     def weight_variable(self, shape):

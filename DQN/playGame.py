@@ -22,6 +22,7 @@ from config import createstateDict
 # # number of frames to skip
 # K = 4
 # preprocess raw image to 84*84 Y channel(luminance)
+new_game = False
 def preprocess(observation):
     # change color space from RGB to YCrCb
     observation = cv2.cvtColor(observation, cv2.COLOR_BGR2YCR_CB)
@@ -29,13 +30,14 @@ def preprocess(observation):
     observation = cv2.resize(observation[:,:,0],(84,84))
     return observation
 
-def playKFrames(action,env,stateDict):
+def playKFrames(action,env,stateDict, evaluate = False):
     # global START_NEW_GAME
     # global CURR_REWARD
+    global new_game
     Reward = 0
     K = stateDict['K']
     for _ in xrange(K):
-        env.render()
+        # env.render()
         observation,localreward,terminal,__=env.step(action)
 #        cv2.imshow('game',observation)
 #        print observation
@@ -55,7 +57,10 @@ def playKFrames(action,env,stateDict):
 
 
     if terminal:
-        stateDict['START_NEW_GAME'] = True
+        if not evaluate:
+            stateDict['START_NEW_GAME'] = True
+        else:
+            new_game = True
 
     return (phi, action, change_reward, terminal)
 
@@ -64,27 +69,30 @@ def evaluate(brain, stateDict):
     # global CURR_REWARD
     # global EVAL
     #create  anew environment just for evaluation
+    global new_game
+    # print "Evaluating Now\n" * 100
     env = gym.make(stateDict['GAME'])
     env.reset()
     # env.render()
     evalStep = 0
     numEpisode = 1.
     totalReward = 0
+    new_game = True
     while True:
         if evalStep >= stateDict['NUM_EVAL_STEPS']:
             break
-        if stateDict['START_NEW_GAME']:
+        if new_game:
             numEpisode += 1
-            stateDict['START_NEW_GAME'] = False
+            new_game = False
             env.reset()
             init_state = []
             for i in range(4):
                 action0 = env.action_space.sample()
-                init_state.append(playKFrames(action0, env, stateDict)[0])
-            brain.setInitState(init_state)
+                init_state.append(playKFrames(action0, env, stateDict, True)[0])
+            brain.setInitState(init_state, True)
         action = brain.getAction(True)
 
-        brain.setPerception(playKFrames(action, env, stateDict), True)
+        brain.setPerception(playKFrames(action, env, stateDict, True), True)
         totalReward += stateDict['CURR_REWARD']
         evalStep += 1
 
@@ -124,7 +132,8 @@ def playgame(stateDict):
             if (brain.timeStep / stateDict['EVAL'] == 1):
                 if not ((os.path.exists("checkStates.txt")) and (os.path.getsize("checkStates.txt") > 0)):
                     minibatch = random.sample(brain.replayMemory, stateDict['SAMPLE_STATES'])
-                    checkStates = [(brain.frameQueue[data[0] - brain.startCounter: data[0] - brain.startCounter+4]) for data in minibatch]
+                    # checkStates = [(brain.frameQueue[data[0] - brain.startCounter: data[0] - brain.startCounter+4]) for data in minibatch]
+                    checkStates = [(brain.getState(data[0])).astype(np.float32) for data in minibatch]
 
                     # checkStates = [data[0] for data in minibatch]
                     with open("checkStates.txt", "w") as fp:
@@ -140,7 +149,6 @@ def playgame(stateDict):
             with open("evalQValue.txt", "a") as fp:
                 print >>fp,avgEvalQValues
             print avgEvalQValues
-            storeCurrState = brain.current
             reward = evaluate(brain, stateDict)
             with open("reward.txt", "a") as fp:
                 print >> fp, reward
