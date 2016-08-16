@@ -120,8 +120,7 @@ def playgame(stateDict):
     env = gym.make(stateDict['GAME'])
     # Step 2: init DQN
     actions = env.action_space.n
-    action_set = env.ale.getMinimalActionSet()
-    brain = DQN(actions, stateDict, action_set)
+    brain = DQN(actions, stateDict)
     checkStates = None
     while True:
         if stateDict['START_NEW_GAME']:
