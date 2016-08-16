@@ -22,7 +22,7 @@ import os
 # REPLAY_START_SIZE = 50 #minimum number of previous transitions to be stored before training starts
 
 class DQN:
-    def __init__(self, actions, stateDict):
+    def __init__(self, actions, stateDict, action_set):
         self.stateDict = stateDict
         # global LEARNING_RATE
         # global GRADIENT_MOMENTUM
@@ -42,6 +42,7 @@ class DQN:
         self.timeStep = 0
         self.epsilon = self.stateDict['INITIAL_EPSILON']
         self.actions = actions
+        self.action_set = action_set
 
         #init Q network
         self.stateInput, self.QValue, self.W_conv1,self.b_conv1,self.W_conv2,self.b_conv2,self.W_conv3,self.b_conv3,self.W_fc1,self.b_fc1,self.W_fc2,self.b_fc2 = self.createQNetwork()
@@ -110,7 +111,7 @@ class DQN:
 
         # input layer
 
-        stateInput = tf.placeholder("float", [None, 84, 84, 4])
+        stateInput = tf.placeholder(tf.float32, [None, 84, 84, 4])
 
         # hidden layers
         h_conv1 = tf.nn.relu(self.conv2d(stateInput, W_conv1, 4) + b_conv1)
@@ -238,7 +239,8 @@ class DQN:
         if evaluate:
             curr_epsilon = 0.05
         if random.random() <= curr_epsilon:
-            action_index = random.randrange(self.actions)
+#            action_index = random.randrange(self.actions)
+            action_index = self.action_set[random.randrange(self.actions)]
         else:
             QValue = [0]
             if not evaluate:

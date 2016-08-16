@@ -25,9 +25,11 @@ from config import createstateDict
 new_game = False
 def preprocess(observation):
     # change color space from RGB to YCrCb
-    observation = cv2.cvtColor(observation, cv2.COLOR_BGR2YCR_CB)
+#    observation = cv2.cvtColor(observation, cv2.COLOR_BGR2YCR_CB)
+    observation = cv2.cvtColor(observation, cv2.COLOR_RGB2GRAY)
     #extract the Y channel and resize
-    observation = cv2.resize(observation[:,:,0],(84,84))
+#    observation = cv2.resize(observation[:,:,0],(84,84))
+    observation = cv2.resize(observation,(84,84))
     return observation
 
 def playKFrames(action,env,stateDict, evaluate = False):
@@ -52,7 +54,13 @@ def playKFrames(action,env,stateDict, evaluate = False):
 
     change_reward = 0
     if stateDict['clipR']:
-        change_reward = max(stateDict['minR'], min(stateDict['maxR'], Reward))
+#        change_reward = max(stateDict['minR'], min(stateDict['maxR'], Reward))
+        if Reward > 0:
+            change_reward = 1
+        elif Reward == 0:
+            change_reward = 0
+        else:
+            change_reward = -1
 
 
 
@@ -112,7 +120,8 @@ def playgame(stateDict):
     env = gym.make(stateDict['GAME'])
     # Step 2: init DQN
     actions = env.action_space.n
-    brain = DQN(actions, stateDict)
+    action_set = env.ale.getMinimalActionSet()
+    brain = DQN(actions, stateDict, action_set)
     checkStates = None
     while True:
         if stateDict['START_NEW_GAME']:
